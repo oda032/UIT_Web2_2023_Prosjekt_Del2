@@ -1,0 +1,47 @@
+﻿@using Blog.Common.Model.ViewModel
+@using Microsoft.AspNetCore.Components
+
+<MudContainer Fixed="true">
+    <div>
+        <EditForm Model="@Model" OnValidSubmit="CreatePost">
+            <DataAnnotationsValidator />
+            <div class="card m-5">
+                <div class="card-header">
+                    <MudText Typo="Typo.h5" Align="Align.Center" Style="@($"color:{Colors.Cyan.Darken4};font-size:1.5rem;text-transform: uppercase;")">Create a new post</MudText>
+                </div>
+                <div class="card-body">
+                    <div class="py-2">
+                        <InputText @bind-Value="Model.PostTitle" id="email" placeholder="Title" class="form-control mb-2" />
+                        <ValidationMessage For="(()=>Model.PostTitle)"></ValidationMessage>
+                    </div>
+                    <div class="py-2">
+                        <InputText @bind-Value="Model.PostDetails" placeholder="Details" class="form-control mb-2" />
+                        <ValidationMessage For="(()=>Model.PostDetails)"></ValidationMessage>
+                    </div>
+                    <div class="py-2">
+                        <InputText @bind-Value="Model.Tags" placeholder="Tags, separated with comma" class="form-control mb-2" />
+                        <ValidationMessage For="(()=>Model.Tags)"></ValidationMessage>
+                    </div>
+                    <div class="text-center">
+                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.AddCircle" Color="Color.Info">Create post</MudButton>
+                    </div>
+                </div>
+            </div>
+        </EditForm>
+    </div>
+</MudContainer>
+
+
+
+@code {
+    [Parameter]
+    public EventCallback<PostCreateModel> OnPostCreated { get; set; }
+
+    public PostCreateModel Model { get; set; } = new();
+
+    private async Task CreatePost()
+    {
+        await OnPostCreated.InvokeAsync(Model);
+    }
+
+}

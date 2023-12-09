@@ -1,0 +1,89 @@
+﻿@page "/register"
+@using Blog.Common.Model.Dto
+@using Blog.Common.Model.ViewModel
+@using Microsoft.AspNetCore.Components
+@using Blog.Common.Interface.IService
+@using Blog.Server.Service
+@inject IAccountService AccountService
+@inject AuthProvider AuthProvider
+@inject NavigationManager NavigationManager
+@inherits LayoutComponentBase
+@inject IToastService ToastService
+
+@using Blazored.Toast.Configuration
+
+<BlazoredToasts Position="ToastPosition.TopRight"
+                Timeout="10"
+                IconType="IconType.FontAwesome"
+                SuccessClass="success-toast-override"
+                SuccessIcon="fa fa-thumbs-up"
+                ErrorIcon="fa fa-bug" />
+
+
+<EditForm Model="@Model" OnValidSubmit="RegisterUser">
+    <DataAnnotationsValidator />
+    <MudGrid Justify="Justify.Center" Class="align-items-center">
+        <MudItem xs="12" sm="6">
+            <MudCard Class="m-5">
+                <MudCardHeader Style="background-color: #D7E2E3">
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6" Style="@($"color:{Colors.BlueGrey.Darken2};text-transform: uppercase;")" Align="Align.Center">register</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudDivider />
+                <MudCardContent>
+                    <MudTextField Label="Email" Class="mt-3" @bind-Value="Model.Email" For="@(() => Model.Email)" />
+                    <MudTextField Label="Password" HelperText="Choose a strong password" Class="mt-3" @bind-Value="Model.Password" For="@(() => Model.Password)" InputType="InputType.Password" />
+                    <MudTextField Label="Password" HelperText="Repeat the password" Class="mt-3" @bind-Value="Model.PasswordConfirm" For="@(() => Model.PasswordConfirm)" InputType="InputType.Password" />
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Dark" FullWidth="true">Register</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</EditForm>
+
+@code {
+    public RegistModel Model { get; set; } = new();
+
+    private async Task RegisterUser()
+    {
+        if (Model.Password == Model.PasswordConfirm)
+        {
+            if (Model.Password.Any(ch => !char.IsLetterOrDigit(ch)) || Model.Password.Any(char.IsLower) || Model.Password.Any(char.IsUpper))
+            {
+                var response = await AccountService.Register(new UserDto
+                    {
+                        Email = Model.Email,
+                        Passwd = Model.Password
+                    });
+
+                if (!string.IsNullOrEmpty(response.Email) && !string.IsNullOrEmpty(response.Passwd) && !string.IsNullOrEmpty(response.Id))
+                {
+                    NavigationManager.NavigateTo("/login", forceLoad: true);
+                }
+            }
+
+            else
+            {
+                ToastService.ShowError("Password is not correct:\n" +
+                                       "1.Password must have at least one non-alphanumeric character\n" +
+                                       "2.Password must have at least one lowercase character\n" +
+                                       "3.Password must have at least one uppercase character\n" +
+                                       "4.Password must have at least one digit");
+                Model.Password = "";
+                Model.PasswordConfirm = "";
+            }
+        }
+        else
+        {
+            ToastService.ShowError("Password and password confirmation are not equal!!!");
+            Model.Password = "";
+            Model.PasswordConfirm = "";
+        }
+    }
+
+}
+
+

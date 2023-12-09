@@ -1,0 +1,53 @@
+﻿@using Blog.Common.Model.ViewModel
+@using Microsoft.AspNetCore.Components
+
+<MudContainer Fixed="true">
+    <div>
+        <MudText Typo="Typo.h5" Align="Align.Left" Style="@($"color:{Colors.Cyan.Darken4};font-size:1.5rem;text-transform: uppercase;")">Create a comment</MudText>
+        <EditForm Model="@Model" OnValidSubmit="CreateComment">
+            <DataAnnotationsValidator />
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="py-2">
+                        <InputText @bind-Value="Model.CommentTitle" placeholder="Title" class="form-control mb-2" />
+                        <ValidationMessage For="(() => Model.CommentTitle)"></ValidationMessage>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="py-2">
+                        <InputText @bind-Value="Model.CommentDetails" placeholder="Details" class="form-control mb-2" />
+                        <ValidationMessage For="(() => Model.CommentDetails)"></ValidationMessage>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="py-2">
+                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.AddCircle" Color="Color.Info">Create</MudButton>
+                    </div>
+                </div>
+            </div>
+        </EditForm>
+    </div>
+</MudContainer>
+
+@code {
+    [Parameter]
+    public EventCallback<CommentCreateModel> OnCommentCreated { get; set; }
+
+    public CommentCreateModel Model { get; set; } = new();
+
+    private async Task CreateComment()
+    {
+        await OnCommentCreated.InvokeAsync(Model);
+
+        await ResetForm();
+    }
+
+    private async Task ResetForm()
+    {
+        Model = new CommentCreateModel();
+    }
+
+}

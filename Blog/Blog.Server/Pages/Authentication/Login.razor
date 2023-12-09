@@ -1,0 +1,68 @@
+﻿@page "/login"
+@using Blog.Common.Model.Dto
+@using Blog.Common.Model.ViewModel
+@using Microsoft.AspNetCore.Components
+@using Blog.Common.Interface.IService
+@using Blog.Server.Service
+@inject IAccountService AccountService
+@inject AuthProvider AuthProvider
+@inject NavigationManager NavigationManager
+@inject IToastService ToastService
+@inherits LayoutComponentBase
+@using Blazored.Toast.Configuration
+
+<BlazoredToasts Position="ToastPosition.TopRight"
+                Timeout="10"
+                IconType="IconType.FontAwesome"
+                SuccessClass="success-toast-override"
+                SuccessIcon="fa fa-thumbs-up"
+                ErrorIcon="fa fa-bug" />
+
+<EditForm Model="@Model" OnValidSubmit="LoginUser">
+    <DataAnnotationsValidator />
+    <MudGrid Justify="Justify.Center" Class="align-items-center">
+        <MudItem xs="12" sm="6">
+            <MudCard Class="m-5">
+                <MudCardHeader Style="background-color: #D7E2E3">
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6" Style="@($"color:{Colors.BlueGrey.Darken2};text-transform: uppercase;")" Align="Align.Center">sign in</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudDivider />
+                <MudCardContent>
+                    <MudTextField Label="Email" Class="mt-3" @bind-Value="Model.Email" For="@(() => Model.Email)" />
+                    <MudTextField Label="Password" Class="mt-3" @bind-Value="Model.Password" For="@(() => Model.Password)" InputType="InputType.Password" />
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Dark" FullWidth="true">Sign In</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</EditForm>
+
+@code {
+    public LoginModel Model { get; set; } = new();
+
+    private async Task LoginUser()
+    {
+        var token = await AccountService.Login(new UserDto
+            {
+                Email = Model.Email,
+                Passwd = Model.Password
+            });
+
+        if (!string.IsNullOrEmpty(token))
+        {
+            AuthProvider.NotifyUserLoggedIn(token);
+            NavigationManager.NavigateTo("/", forceLoad: true);
+        }
+        else
+        {
+            ToastService.ShowError("Wrong credentials!!! Try again");
+            Model.Email = "";
+            Model.Password = "";
+        }
+    }
+
+}

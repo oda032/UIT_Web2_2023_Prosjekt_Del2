@@ -1,0 +1,119 @@
+﻿@page "/blogs"
+@using Blog.Common.Interface.IService
+@using Blog.Common.Model.Dto
+@using Blog.Server.Component.Blogs
+@inherits LayoutComponentBase
+@inject IUserSubscribedBlogService UserSubscribedBlogService
+@inject IBlogService BlogService
+
+<PageTitle>Blogs</PageTitle>
+
+<MudContainer Fixed="true">
+    <div class="pt-2 pb-2">
+        @if (isLoading)
+        {
+            <div class="text-center">
+                <h4>Loading...</h4>
+                <img src="images/loading.gif"/>
+            </div>
+                
+                }
+                else
+                {
+                <AuthorizeView>
+                    <Authorized>
+                        <MudText Typo="Typo.h5" Align="Align.Start" Style="@($"color:{Colors.Cyan.Darken4};font-size:1.5rem;text-transform: uppercase;")">Subscribed blogs</MudText>
+                        <BlogHeader/>
+                        @foreach (var subsribedBlogDto in subscribedBlogDtos)
+                        {
+                            <BlogItem BlogDto="subsribedBlogDto" SubscribedBlogs="subscribedBlogDtos"/>
+                        }
+                    </Authorized>
+                </AuthorizeView>
+
+                <MudText Typo="Typo.h5" Align="Align.Start" Style="@($"color:{Colors.Cyan.Darken4};font-size:1.5rem;text-transform: uppercase;")">Unsubscribed blogs</MudText>
+                <BlogHeader/>
+                foreach (var blogDto in blogDtos)
+                {
+                <BlogItem BlogDto="blogDto" OnSubscribeCalled=HandleSubscribe/>
+                }
+                }
+            </div>
+
+    <div class="pt-2 pb-2">
+        <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Outlined.ArrowBack" Style="@($"color:{Colors.Cyan.Darken4};font-size:1.25rem")" href="@($"/")">Back to homepage</MudButton>
+    </div>
+
+</MudContainer>
+
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthStateTask { get; set; }
+
+    private IEnumerable<BlogDto> blogDtos;
+    private IEnumerable<BlogDto> subscribedBlogDtos = new List<BlogDto>();
+    private bool isLoading = true;
+    private BlogDto changedBlogDto;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await GetAuthState();
+
+        var allBlogs = await BlogService.GetBlogs();
+        var subscribedBlogs = new List<BlogDto>();
+        if (!state.User.Identity.IsAuthenticated)
+        {
+            blogDtos = allBlogs;
+        }
+        else
+        {
+            var usbDtos = await UserSubscribedBlogService.GetUserSubscribedBlogs(state.User.Identities.First().Claims.ElementAt(1).Value);
+            if (!usbDtos.Any())
+            {
+                blogDtos = allBlogs;
+            }
+            else
+            {
+                foreach (var usbDto in usbDtos)
+                {
+                    var blogDto = allBlogs.SingleOrDefault(b => b.BlogID == usbDto.BlogID);
+                    subscribedBlogs.Add(blogDto);
+                    subscribedBlogDtos = subscribedBlogs;
+                    StateHasChanged();
+                }
+
+                var usbIds = subscribedBlogs.Select(b => b.BlogID).ToList();
+                var filteredBlogs = allBlogs.Where(b => !usbIds.Contains((int)b.BlogID)).ToList();
+                blogDtos = filteredBlogs;
+                StateHasChanged();
+            }
+        }
+
+        isLoading = false;
+    }
+
+    public async Task HandleSubscribe(BlogDto changedBlogDto)
+    {
+
+        this.changedBlogDto = changedBlogDto;
+        blogDtos = blogDtos.Where(b => b.BlogID != changedBlogDto.BlogID).ToList();
+        subscribedBlogDtos = subscribedBlogDtos.Append(changedBlogDto).ToList();
+        StateHasChanged();
+
+        var state = await GetAuthState();
+        var userId = state.User.Identities.First().Claims.ElementAt(1).Value;
+
+        var usbId = await UserSubscribedBlogService.CreateUserSubscribedBlog(new UserSubscribedBlogDto
+            {
+                ApplicationUserID = userId,
+                BlogID = changedBlogDto.BlogID
+            });
+    }
+
+    private async Task<AuthenticationState> GetAuthState()
+    {
+        var authState = await AuthStateTask;
+        return authState;
+    }
+}

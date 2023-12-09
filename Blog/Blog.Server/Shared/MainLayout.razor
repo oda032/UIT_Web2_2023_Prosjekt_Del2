@@ -1,0 +1,29 @@
+﻿@inherits LayoutComponentBase
+
+<PageTitle>Blog.Server</PageTitle>
+
+<MudThemeProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<div>
+    <MudLayout>
+        <NavMenu />
+        <MudMainContent>
+            <MudContainer>
+                @Body
+            </MudContainer>
+        </MudMainContent>
+        <MudAppBar Elevation="1" Style="top: auto; bottom: 0;" Dense="true" Fixed="true" Color="Color.Dark">
+            <MudGrid Justify="Justify.Center">
+                <MudText Style="font-size: medium">
+                    © 2023 Copyright:
+                    <a class="text-reset fw-bold" href="#">Gruppe 7</a>
+                </MudText>
+            </MudGrid>
+        </MudAppBar>
+    </MudLayout>
+</div>
+
+
+

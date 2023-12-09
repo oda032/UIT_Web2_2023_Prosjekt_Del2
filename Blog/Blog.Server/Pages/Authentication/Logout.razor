@@ -1,0 +1,50 @@
+﻿@page "/logout"
+@using Blog.Common.Interface.IService
+@using Blog.Server.Service
+@inject NavigationManager NavigationManager
+@inject IAccountService AccountService
+@inject AuthProvider AuthProvider
+@inherits LayoutComponentBase
+
+@code {
+    private bool IsUserAuthenticated { get; set; }
+
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthStateTask { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await GetAuthStatus();
+            if (IsUserAuthenticated)
+            {
+                await LogoutUser();
+            }
+            else
+            {
+                NavigateToLogin();
+            }
+        }
+    }
+
+    private async Task GetAuthStatus()
+    {
+        var authState = await AuthStateTask;
+        IsUserAuthenticated = authState.User.Identity.IsAuthenticated;
+    }
+
+    private async Task LogoutUser()
+    {
+        await AccountService.Logout();
+        AuthProvider.NotifyUserLogout();
+        NavigationManager.NavigateTo("/", forceLoad:true);
+        StateHasChanged();
+    }
+
+    private async Task NavigateToLogin()
+    {
+        NavigationManager.NavigateTo("/login");
+        StateHasChanged();
+    }
+}

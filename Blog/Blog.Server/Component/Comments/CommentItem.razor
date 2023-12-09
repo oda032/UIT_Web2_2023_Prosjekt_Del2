@@ -1,0 +1,28 @@
+﻿@using Blog.Common.Model.Dto
+@using Blog.Common.Model.ViewModel
+
+<MudContainer Fixed="true">
+    <div>
+        <table class="table table-bordered text-start bg-light">
+            <tbody class="table-body">
+                <tr>
+                    <td width="10%"><strong>@CommentModel.UserName</strong></td>
+                    @*<td width="20%">@CommentModel.CommentTitle</td>*@
+                    <td width="70%">@CommentModel.CommentDetails</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</MudContainer>
+
+
+@code {
+    [Parameter]
+    public CommentModel CommentModel { get; set; }
+
+    protected override void OnInitialized()
+    {
+        Console.WriteLine($"CommentItem Initialized - CommentID: {CommentModel.CommentID}");
+        base.OnInitialized();
+    }
+}

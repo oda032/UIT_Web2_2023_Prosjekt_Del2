@@ -1,0 +1,54 @@
+﻿@using Blog.Common.Model.Dto
+@using Microsoft.AspNetCore.Components
+
+<MudContainer Fixed="true">
+    <div>
+        <table class="table table-bordered">
+            <tbody class="table-body">
+                <tr>
+                    <td width="5%">@BlogDto.BlogID</td>
+                    <td width="10%">@BlogDto.BlogTitle</td>
+                    <td width="10%">@BlogDto.BlogDetails</td>
+                    <td width="40%">@BlogDto.BlogOwnerID</td>
+                    <td width="10%">@BlogDto.BlogStatus</td>
+                    <td>
+                        @if (IsSubscribed(BlogDto.BlogID))
+                        {
+                            <MudButton Variant="Variant.Text" Style="@($"color:{Colors.BlueGrey.Darken2};font-size:1.25rem")" Disabled="true">Subscribed</MudButton>
+                        }
+                        else
+                        {
+                            <AuthorizeView>
+                                <Authorized>
+                                    <MudButton Variant="Variant.Filled" Style="@($"color:{Colors.Grey.Lighten5}, background-color:{Colors.BlueGrey.Darken2}")" @onclick=SubscribeBlog>Subscribe</MudButton>
+                                </Authorized>
+                            </AuthorizeView>
+                        }
+                        <MudButton Variant="Variant.Filled" Color="Color.Default" href="@($"/posts/{BlogDto.BlogID}")">Go to posts</MudButton>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</MudContainer>
+
+@code {
+    [Parameter]
+    public BlogDto BlogDto { get; set; }
+
+    [Parameter]
+    public IEnumerable<BlogDto> SubscribedBlogs { get; set; }
+
+    [Parameter]
+    public EventCallback<BlogDto> OnSubscribeCalled { get; set; }
+
+    private async Task SubscribeBlog()
+    {
+        await OnSubscribeCalled.InvokeAsync(BlogDto);
+    }
+
+    private bool IsSubscribed(int blogId)
+    {
+        return SubscribedBlogs?.Any(b => b.BlogID == blogId) ?? false;
+    }
+}

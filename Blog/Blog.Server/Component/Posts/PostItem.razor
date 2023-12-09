@@ -1,0 +1,35 @@
+﻿@using Blog.Common.Model.Dto
+@using Blog.Common.Model.ViewModel
+
+<div class="col-12 px-2">
+    <table class="table table-bordered">
+        <tbody class="table-body">
+        <tr>
+            <td width="15%">@PostModel.UserName</td>
+            <td width="15%">@PostModel.PostTitle</td>
+            <td width="40%">@PostModel.PostDetails</td>
+            <td width="30%">
+
+                @foreach (var tag in PostModel.TagsList)
+                {
+                    <MudButton Variant="Variant.Text" Color="Color.Info" href="@tag">@tag</MudButton>
+                }
+            </td>
+            <td>
+                <MudButton Variant="Variant.Filled" Color="Color.Default" href="@($"/posts/details/{PostModel.BlogID}/{PostModel.PostID}")">details</MudButton>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+@code {
+    [Parameter]
+    public PostModel PostModel { get; set; }
+
+    protected override void OnInitialized()
+    {
+        Console.WriteLine($"PostItem Initialized - PostID: {PostModel.PostID}");
+        base.OnInitialized();
+    }
+}

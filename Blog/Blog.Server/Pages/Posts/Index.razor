@@ -1,0 +1,367 @@
+﻿@page "/posts/{id:int}"
+@using Blog.Common.Interface.IService
+@using Blog.Common.Model.Dto
+@using Blog.Common.Model.ViewModel
+@using Blog.Server.Component.Posts
+@using Blog.Common.Enum
+@using Blog.Server.SignalR
+@using Microsoft.AspNetCore.SignalR
+@using Blazored.Toast.Configuration
+@using Microsoft.AspNetCore.SignalR.Client
+@using Microsoft.EntityFrameworkCore.Metadata.Internal
+@inherits LayoutComponentBase
+@inject IPostService PostService
+@inject ITagService TagService
+@inject IPostTagService PostTagService
+@inject IBlogService BlogService
+@inject IToastService ToastService
+@inject IHubContext<UpdateHub> UpdateHubContext
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inject IAccountService AccountService
+@implements IAsyncDisposable
+
+<BlazoredToasts Position="ToastPosition.TopRight"
+                Timeout="5"
+                IconType="IconType.FontAwesome"
+                SuccessClass="success-toast-override"
+                SuccessIcon="fa fa-thumbs-up"
+                ErrorIcon="fa fa-bug" />
+
+<PageTitle>Posts</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large">
+    <div class="pt-2 pb-2">
+        <PostSearchForm OnSearch="HandleSearchPost" onValidSearch="HandleResetSearch" />
+    </div>
+    <div class="pt-2 pb-2">
+        @if (Status == BlogStatus.Closed)
+        {
+            <MudText Typo="Typo.h6" Align="Align.Start" Style="@($"color:{Colors.Red.Default};font-size:1.25rem;text-transform: uppercase;")">Blog status is <strong>closed</strong>. New posts can not be created.</MudText>
+
+        }
+    </div>
+    <div class="pt-2 pb-2">
+        <AuthorizeView>
+            <Authorized>
+                @if (Status == BlogStatus.Open)
+                {
+                    if (!isHidden)
+                    {
+                        <div>
+                            <PostForm OnPostCreated="HandlePostCreated" />
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="row pt-4 pb-3">
+                            @*<div class="col-6">
+                    <MudText Typo="Typo.h4" Align="Align.Start" Style="@($"color:{Colors.Cyan.Darken4};font-size:1.5rem;text-transform: uppercase;")">Posts</MudText>
+                    </div>*@
+
+                            <div class="text-end">
+                                <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.AddCircle" Color="Color.Info" @onclick="OpenForm">Create new post</MudButton>
+                            </div>
+
+                        </div>
+                    }
+                }
+            </Authorized>
+        </AuthorizeView>
+    </div>
+    <div class="pt-2 pb-2">
+        @if (isLoading)
+        {
+            <div class="text-center">
+                <h4>Loading...</h4>
+                <img src="images/loading.gif" />
+            </div>
+        }
+        else
+        {
+            <PostHeader />
+            foreach (var postModel in postModels)
+            {
+                <PostItem PostModel="postModel" />
+            }
+        }
+    </div>
+    <div class="pt-2 pb-15">
+        <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Outlined.ArrowBack" Style="@($"color:{Colors.Cyan.Darken4};font-size:1.25rem")" href="@($"/blogs")">Back to blogs</MudButton>
+    </div>
+</MudContainer>
+
+@code {
+
+    [Parameter]
+    public int Id { get; set; }
+
+    [Parameter]
+    public BlogStatus Status { get; set; } = BlogStatus.Open;
+
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthStateTask { get; set; }
+
+    private HubConnection? hubConnection;
+    //private HubConnection? singleHubConnection;
+
+    private PostCreateModel newPost;
+    private PostSearchModel postSearch;
+
+    private List<PostModel>? postModels = new List<PostModel>();
+    private List<PostModel>? initialPostModels = new List<PostModel>();
+    private bool isLoading = true;
+    private bool isHidden = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        hubConnection = new HubConnectionBuilder()
+                .WithUrl(NavigationManager.ToAbsoluteUri("/updateHub"))
+                .Build();
+
+        hubConnection.On<string>("ReceiveMessage", async (msg) =>
+        {
+            var encodedMsg = $"{msg}";
+            ToastService.ShowSuccess(encodedMsg);
+            postModels = await LoadData();
+            initialPostModels = postModels;
+            await InvokeAsync(() => StateHasChanged());
+        });
+
+        await hubConnection.StartAsync();
+
+        //singleHubConnection = new HubConnectionBuilder()
+        //    .WithUrl(NavigationManager.ToAbsoluteUri("/tagUpdateHub"))
+        //    .Build();
+
+        //singleHubConnection.On<string, string>("ReceivePrivateMessage", async (userId, msg) =>
+        //{
+        //    var encodedMsg = $"{msg}";
+        //    ToastService.ShowWarning(encodedMsg);
+        //});
+
+        //await singleHubConnection.StartAsync();
+
+        Status = await GetBlogStatus(Id);
+
+        postModels = await LoadData();
+
+        StateHasChanged();
+
+        initialPostModels = new List<PostModel>(postModels);
+
+        isLoading = false;
+    }
+
+    public bool IsConnected =>
+        hubConnection?.State == HubConnectionState.Connected;
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+
+    //public bool IsSingleConnected =>
+    //    singleHubConnection?.State == HubConnectionState.Connected;
+
+    //public async ValueTask DisposeSingleAsync()
+    //{
+    //    if (singleHubConnection is not null)
+    //    {
+    //        await singleHubConnection.DisposeAsync();
+    //    }
+    //}
+
+    private async Task OpenForm()
+    {
+        isHidden = false;
+    }
+
+    private async Task HandlePostCreated(PostCreateModel newPost)
+    {
+        this.newPost = newPost;
+
+        var state = await GetAuthState();
+        var userName = state.User.Identities.First().Claims.ElementAt(2).Value;
+
+        //var users = await GetUsers();
+
+        var post = new PostDto
+            {
+                BlogID = Id,
+                PostDetails = newPost.PostDetails,
+                PostTitle = newPost.PostTitle,
+                PostOwnerName = userName
+            };
+
+        var postId = await PostService.CreatePost(post);
+
+        var tagNames = newPost.Tags
+            .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+            .ToList();
+
+        //var taggedUser = await GetTaggedUser(users, tagNames);
+
+        //if (taggedUser != null)
+        //{
+        //    await NotifyOneClient(postId, taggedUser.Id, userName);
+        //}
+
+        var tags = new List<TagDto>();
+
+        foreach (var tagName in tagNames)
+        {
+            var tag = new TagDto
+                {
+                    TagName = tagName
+                };
+
+            tags.Add(tag);
+        }
+
+        var tagIds = await TagService.CreateTags(tags);
+
+        var postTags = new List<PostTagDto>();
+
+        foreach (var tagId in tagIds)
+        {
+            var postTag = new PostTagDto
+                {
+                    PostID = postId,
+                    TagID = tagId
+                };
+            postTags.Add(postTag);
+        }
+        await PostTagService.CreatePostTags(postTags);
+
+        await NotifyClients(postId, userName);
+
+        isHidden = true;
+    }
+
+    private async Task<AuthenticationState> GetAuthState()
+    {
+        var authState = await AuthStateTask;
+        return authState;
+    }
+
+    private async Task<BlogStatus> GetBlogStatus(int blogId)
+    {
+        var blog = await BlogService.GetBlog(blogId);
+        return blog.BlogStatus;
+    }
+
+    //private async Task<IEnumerable<UserDto>> GetUsers()
+    //{
+    //    var users = await AccountService.GetUsers();
+    //    return users;
+    //}
+
+    //private async Task<UserDto?> GetTaggedUser(IEnumerable<UserDto> users, List<string> tagNames)
+    //{
+    //    foreach (var user in users)
+    //    {
+    //        int index = user.Email.IndexOf('@');
+    //        string userName = user.Email.Substring(0, index);
+    //        if (tagNames.Contains(userName, StringComparer.OrdinalIgnoreCase))
+    //        {
+    //            return user;
+    //        }
+    //    }
+
+    //    return null;
+    //}
+
+    private async Task HandleSearchPost(PostSearchModel postSearch)
+    {
+        this.postSearch = postSearch;
+
+        if (postSearch.Option == "option1")
+        {
+            await FilterPostsByUsername(postSearch.Search);
+        }
+
+        if (postSearch.Option == "option2")
+        {
+            await FilterPostsByTag(postSearch.Search);
+        }
+
+    }
+
+    private async Task HandleResetSearch()
+    {
+        postModels = initialPostModels;
+
+        StateHasChanged();
+    }
+
+    private async Task FilterPostsByTag(string? text)
+    {
+        postModels = initialPostModels
+            .Where(postModel => postModel.TagsList?.Any(tag => tag.Contains(text, StringComparison.OrdinalIgnoreCase)) == true).ToList();
+
+        StateHasChanged();
+    }
+
+    private async Task FilterPostsByUsername(string? text)
+    {
+        postModels = initialPostModels
+            .Where(postModel => postModel.UserName.Contains(text, StringComparison.OrdinalIgnoreCase)).ToList();
+
+        StateHasChanged();
+    }
+
+    private async Task<List<PostModel>> LoadData()
+    {
+        if (postModels.Count != 0)
+        {
+            postModels = new List<PostModel>();
+        }
+        var posts = await PostService.GetPosts(Id);
+        var tags = await TagService.GetTags();
+
+        foreach (var post in posts)
+        {
+            var tagsInPost = post.PostTags.Select(pt => pt.TagID).ToList();
+
+            var tagList = tags.Where(t => tagsInPost.Contains((int)t.TagID)).ToList();
+
+            var tagNamesList = tagList.Select(t => t.TagName).ToList();
+
+            var postMod = new PostModel
+                {
+                    BlogID = post.BlogID,
+                    ObjectOwnerId = post.ObjectOwnerId,
+                    PostDetails = post.PostDetails,
+                    PostID = post.PostID,
+                    PostOwnerID = post.PostOwnerID,
+                    PostTitle = post.PostTitle,
+                    TagsList = tagNamesList,
+                    UserName = post.PostOwnerName
+                };
+            postModels.Add(postMod);
+        }
+        return postModels;
+    }
+
+    private async Task NotifyClients(int postId, string userName)
+    {
+        if (hubConnection is not null && hubConnection.State == HubConnectionState.Connected)
+        {
+            var message = $"Post with Id={postId} created by User : {userName}";
+            await hubConnection.SendAsync("SendMessage", message);
+        }
+    }
+
+    //private async Task NotifyOneClient(int postId, string userId, string userName)
+    //{
+    //    if (singleHubConnection is not null && singleHubConnection.State == HubConnectionState.Connected)
+    //    {
+    //        var message = $"Hi, you have been tagged in Post={postId} created by User : {userName}";
+    //        await singleHubConnection.SendAsync("SendMessageToUser", userId, message);
+    //    }
+    //}
+}

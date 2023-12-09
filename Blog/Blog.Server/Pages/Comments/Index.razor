@@ -1,0 +1,245 @@
+﻿@page "/posts/details/{blogId:int}/{postId:int}"
+
+@using Blog.Common.Enum
+@using Blog.Common.Interface.IService
+@using Blog.Common.Model.Dto
+@using Blog.Common.Model.ViewModel
+@using Blog.Server.Component.Posts
+@using Blog.Server.Component.Comments
+@using Blazored.Toast.Configuration
+@using Microsoft.AspNetCore.SignalR.Client
+@inject ITagService TagService
+@inject IPostService PostService
+@inject IBlogService BlogService
+@inject ICommentService CommentService
+@inject NavigationManager NavigationManager
+@implements IAsyncDisposable
+@inject IToastService ToastService
+
+<BlazoredToasts Position="ToastPosition.TopRight"
+                Timeout="5"
+                IconType="IconType.FontAwesome"
+                SuccessClass="success-toast-override"
+                SuccessIcon="fa fa-thumbs-up"
+                ErrorIcon="fa fa-bug" />
+
+<PageTitle>PostDetails</PageTitle>
+
+@if (isLoadingHeader)
+{
+    <div class="text-center">
+        <h4>Loading Post Details...</h4>
+        <img src="images/loading.gif"/>
+    </div>
+}
+else
+{
+    <MudContainer Fixed="true">
+        <div>
+            <MudText Typo="Typo.h5" Align="Align.Center" Style="@($"color:{Colors.Cyan.Darken4};font-size:1.5rem;text-transform: uppercase;")">Post @PostId</MudText>
+            
+            <PostDetailsItem PostModel="postModel" />
+
+            @if (Status == BlogStatus.Closed)
+            {
+                <div>
+                    Blog status is CLOSED. New comments can not be created.
+                </div>
+            }
+            
+            @if (isLoading)
+            {
+                <div class="text-center">
+                    <h4>Loading...</h4>
+                    <img src="images/loading.gif"/>
+                </div>
+            }
+            else
+            {
+                <MudText Typo="Typo.h5" Align="Align.Center" Style="@($"color:{Colors.Cyan.Darken4};font-size:1.5rem;text-transform: uppercase;")">Comments</MudText>
+                @*<CommentHeader />*@
+                foreach (var commentModel in commentModels)
+                {
+                    <CommentItem CommentModel="commentModel" />
+                }
+            }
+
+            <AuthorizeView>
+                <Authorized>
+                    @if (Status == BlogStatus.Open)
+                    {
+                        <div>
+                            <CommentForm OnCommentCreated="HandleCommentCreated" />
+                        </div>
+                    }
+                </Authorized>
+            </AuthorizeView>
+        </div>
+    </MudContainer>}
+
+@code {
+    [Parameter]
+    public int BlogId { get; set; }
+
+    [Parameter]
+    public int PostId { get; set; }
+
+    [Parameter]
+    public BlogStatus Status { get; set; } = BlogStatus.Open;
+
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthStateTask { get; set; }
+
+    private HubConnection? hubConnection;
+
+    private CommentCreateModel newComment;
+
+    private PostModel postModel = new PostModel();
+
+    private List<CommentModel>? commentModels = new List<CommentModel>();
+
+    private bool isLoadingHeader = true;
+    private bool isLoading = true;
+    //private bool isHidden = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(NavigationManager.ToAbsoluteUri("/updateHub"))
+            .Build();
+
+        hubConnection.On<string>("ReceiveMessage", async (msg) =>
+        {
+            var encodedMsg = $"{msg}";
+            ToastService.ShowSuccess(encodedMsg);
+            await LoadCommentsData();
+            await InvokeAsync(() => StateHasChanged());
+        });
+
+        await hubConnection.StartAsync();
+
+        await LoadPostData();
+
+        Status = await GetBlogStatus(BlogId);
+
+        isLoadingHeader = false;
+
+        await LoadCommentsData();
+
+        isLoading = false;
+    }
+
+    public bool IsConnected =>
+        hubConnection?.State == HubConnectionState.Connected;
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+
+    private async Task LoadPostData()
+    {
+        if (postModel is not null)
+        {
+            postModel = new PostModel();
+        }
+        var post = await PostService.GetPost(PostId);
+        var tags = await TagService.GetTags();
+
+        var tagsInPost = post.PostTags.Select(pt => pt.TagID).ToList();
+
+        var tagList = tags.Where(t => tagsInPost.Contains((int)t.TagID)).ToList();
+
+        var tagNamesList = tagList.Select(t => t.TagName).ToList();
+
+        var postMod = new PostModel
+            {
+                BlogID = BlogId,
+                ObjectOwnerId = post.ObjectOwnerId,
+                PostDetails = post.PostDetails,
+                PostID = post.PostID,
+                PostOwnerID = post.PostOwnerID,
+                PostTitle = post.PostTitle,
+                TagsList = tagNamesList,
+                UserName = post.PostOwnerName
+            };
+
+        postModel = postMod;
+    }
+
+    private async Task<BlogStatus> GetBlogStatus(int blogId)
+    {
+        var blog = await BlogService.GetBlog(blogId);
+        return blog.BlogStatus;
+    }
+
+    private async Task LoadCommentsData()
+    {
+        var listOfComments = new List<CommentModel>();
+        var comments = await CommentService.GetComments(PostId);
+        foreach (var comment in comments)
+        {
+            var commentMod = new CommentModel
+                {
+                    BlogID = BlogId,
+                    CommentDetails = comment.CommentDetails,
+                    CommentOwnerID = comment.CommentOwnerID,
+                    CommentID = comment.CommentID,
+                    CommentOwnerName = comment.CommentOwnerName,
+                    CommentTitle = comment.CommentTitle,
+                    ObjectOwnerId = comment.ObjectOwnerId,
+                    PostID = PostId,
+                    UserName = comment.CommentOwnerName
+                };
+            listOfComments.Add(commentMod);
+        }
+
+        commentModels = listOfComments;
+    }
+
+    private async Task HandleCommentCreated(CommentCreateModel newComment)
+    {
+        this.newComment = newComment;
+
+        var state = await GetAuthState();
+        var userName = state.User.Identities.First().Claims.ElementAt(2).Value;
+
+        var comment = new CommentDto
+            {
+                BlogID = BlogId,
+                CommentDetails = newComment.CommentDetails,
+                PostID = PostId,
+                CommentTitle = newComment.CommentTitle,
+                CommentOwnerName = userName
+            };
+
+        var commentId = await CommentService.CreateComment(comment);
+
+        await NotifyClients(commentId, userName);
+
+        //await LoadCommentsData();
+
+        //StateHasChanged();
+    }
+
+    private async Task<AuthenticationState> GetAuthState()
+    {
+        var authState = await AuthStateTask;
+        return authState;
+    }
+
+    private async Task NotifyClients(int commentId, string userName)
+    {
+
+        if (hubConnection is not null && hubConnection.State == HubConnectionState.Connected)
+        {
+            var message = $"Comment with Id={commentId} created by User : {userName}";
+            await hubConnection.SendAsync("SendMessage", message);
+        }
+    }
+
+}
