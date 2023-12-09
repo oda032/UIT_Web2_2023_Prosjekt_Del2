@@ -16,6 +16,7 @@
 @inject NavigationManager NavigationManager
 @implements IAsyncDisposable
 @inject IToastService ToastService
+@inject IDialogService DialogService
 
 <BlazoredToasts Position="ToastPosition.TopRight"
                 Timeout="5"
@@ -275,23 +276,38 @@ else
 
     private async Task HandleCommentDeleted(CommentModel commentModel)
     {
-        this.commentModel = commentModel;
-        var comment = new CommentDto
-        {
-            BlogID = commentModel.BlogID,
-            CommentDetails = commentModel.CommentDetails,
-            CommentID = commentModel.CommentID,
-            CommentOwnerID = commentModel.CommentOwnerID,
-            CommentOwnerName = commentModel.CommentOwnerName,
-            CommentTitle = commentModel.CommentTitle,
-            ObjectOwnerId = commentModel.ObjectOwnerId,
-            PostID = commentModel.PostID
-        };
-        await CommentService.DeleteComment(comment);
+        var result = await GetConfirmationDialog();
 
-        await LoadCommentsData();
+        if (result.Equals(true))
+        {
+            this.commentModel = commentModel;
+            var comment = new CommentDto
+            {
+                BlogID = commentModel.BlogID,
+                CommentDetails = commentModel.CommentDetails,
+                CommentID = commentModel.CommentID,
+                CommentOwnerID = commentModel.CommentOwnerID,
+                CommentOwnerName = commentModel.CommentOwnerName,
+                CommentTitle = commentModel.CommentTitle,
+                ObjectOwnerId = commentModel.ObjectOwnerId,
+                PostID = commentModel.PostID
+            };
+            await CommentService.DeleteComment(comment);
+
+            await LoadCommentsData();
+        }
 
         StateHasChanged();
+    }
+
+    private async Task<bool?> GetConfirmationDialog()
+    {
+        bool? result = await DialogService.ShowMessageBox(
+            "Comment will be deleted", 
+            "Are you really sure?", 
+            yesText:"Delete!", cancelText:"Cancel");
+
+        return result;
     }
 
 }
