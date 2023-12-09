@@ -9,6 +9,23 @@
                     <td width="10%"><strong>@CommentModel.UserName</strong></td>
                     @*<td width="20%">@CommentModel.CommentTitle</td>*@
                     <td width="70%">@CommentModel.CommentDetails</td>
+                    <AuthorizeView>
+                        <Authorized>
+                            @if (IsAuthor(CommentModel.CommentOwnerID))
+                            {
+                                <td width="20%">
+                                    <MudButton Variant="Variant.Filled" Style="@($"color:{Colors.Grey.Lighten5}; background-color:{Colors.Red.Lighten2}")" OnClick="@DeleteComment">Delete</MudButton>
+                                </td>
+                            }
+                            else
+                            {
+                                <td width="20%">  </td>
+                            }
+                        </Authorized>
+                        <NotAuthorized>
+                            <td width="20%">  </td>
+                        </NotAuthorized>
+                    </AuthorizeView>
                 </tr>
             </tbody>
         </table>
@@ -20,9 +37,26 @@
     [Parameter]
     public CommentModel CommentModel { get; set; }
 
-    protected override void OnInitialized()
+    [Parameter]
+    public string UserID { get; set; }
+
+    [Parameter]
+    public EventCallback<CommentModel> OnDeleteCommentCalled { get; set; }
+
+    private async Task DeleteComment()
     {
-        Console.WriteLine($"CommentItem Initialized - CommentID: {CommentModel.CommentID}");
-        base.OnInitialized();
+        await OnDeleteCommentCalled.InvokeAsync(CommentModel);
+    }
+
+    private bool IsAuthor(string userId)
+    {
+        if (userId == UserID)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 }

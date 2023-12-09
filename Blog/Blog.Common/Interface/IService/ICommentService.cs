@@ -11,5 +11,6 @@ namespace Blog.Common.Interface.IService
     {
         Task<IEnumerable<CommentDto>> GetComments(int postId);
         Task<int> CreateComment(CommentDto commentDto);
+        Task DeleteComment(CommentDto commentDto);
     }
 }

@@ -7,6 +7,7 @@
 @using Blog.Server.Component.Posts
 @using Blog.Server.Component.Comments
 @using Blazored.Toast.Configuration
+@using Microsoft.AspNetCore.SignalR
 @using Microsoft.AspNetCore.SignalR.Client
 @inject ITagService TagService
 @inject IPostService PostService
@@ -29,7 +30,7 @@
 {
     <div class="text-center">
         <h4>Loading Post Details...</h4>
-        <img src="images/loading.gif"/>
+        <img src="images/loading.gif" />
     </div>
 }
 else
@@ -37,7 +38,7 @@ else
     <MudContainer Fixed="true">
         <div>
             <MudText Typo="Typo.h5" Align="Align.Center" Style="@($"color:{Colors.Cyan.Darken4};font-size:1.5rem;text-transform: uppercase;")">Post @PostId</MudText>
-            
+
             <PostDetailsItem PostModel="postModel" />
 
             @if (Status == BlogStatus.Closed)
@@ -46,22 +47,32 @@ else
                     Blog status is CLOSED. New comments can not be created.
                 </div>
             }
-            
+
             @if (isLoading)
             {
                 <div class="text-center">
                     <h4>Loading...</h4>
-                    <img src="images/loading.gif"/>
+                    <img src="images/loading.gif" />
                 </div>
             }
             else
             {
                 <MudText Typo="Typo.h5" Align="Align.Center" Style="@($"color:{Colors.Cyan.Darken4};font-size:1.5rem;text-transform: uppercase;")">Comments</MudText>
                 @*<CommentHeader />*@
-                foreach (var commentModel in commentModels)
-                {
-                    <CommentItem CommentModel="commentModel" />
-                }
+                <AuthorizeView>
+                    <Authorized>
+                        @foreach (var commentModel in commentModels)
+                        {
+                            <CommentItem CommentModel="commentModel" UserID=@userId OnDeleteCommentCalled="HandleCommentDeleted"/>
+                        }
+                    </Authorized>
+                    <NotAuthorized>
+                        @foreach (var commentModel in commentModels)
+                        {
+                            <CommentItem CommentModel="commentModel" UserID="" />
+                        }
+                    </NotAuthorized>
+                </AuthorizeView>
             }
 
             <AuthorizeView>
@@ -75,7 +86,8 @@ else
                 </Authorized>
             </AuthorizeView>
         </div>
-    </MudContainer>}
+    </MudContainer>
+}
 
 @code {
     [Parameter]
@@ -96,11 +108,15 @@ else
 
     private PostModel postModel = new PostModel();
 
+    private CommentModel commentModel = new CommentModel();
+
     private List<CommentModel>? commentModels = new List<CommentModel>();
 
     private bool isLoadingHeader = true;
     private bool isLoading = true;
     //private bool isHidden = true;
+
+    private string? userId = String.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -118,6 +134,8 @@ else
         });
 
         await hubConnection.StartAsync();
+
+        userId = await GetUserID();
 
         await LoadPostData();
 
@@ -240,6 +258,40 @@ else
             var message = $"Comment with Id={commentId} created by User : {userName}";
             await hubConnection.SendAsync("SendMessage", message);
         }
+    }
+
+    private async Task<string>? GetUserID()
+    {
+        try
+        {
+            var state = await GetAuthState();
+            return state.User.Identities.First().Claims.ElementAt(1).Value;
+        }
+        catch
+        {
+            return String.Empty;
+        }
+    }
+
+    private async Task HandleCommentDeleted(CommentModel commentModel)
+    {
+        this.commentModel = commentModel;
+        var comment = new CommentDto
+        {
+            BlogID = commentModel.BlogID,
+            CommentDetails = commentModel.CommentDetails,
+            CommentID = commentModel.CommentID,
+            CommentOwnerID = commentModel.CommentOwnerID,
+            CommentOwnerName = commentModel.CommentOwnerName,
+            CommentTitle = commentModel.CommentTitle,
+            ObjectOwnerId = commentModel.ObjectOwnerId,
+            PostID = commentModel.PostID
+        };
+        await CommentService.DeleteComment(comment);
+
+        await LoadCommentsData();
+
+        StateHasChanged();
     }
 
 }

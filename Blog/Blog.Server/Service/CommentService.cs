@@ -56,5 +56,23 @@ namespace Blog.Server.Service
                 return 0;
             }
         }
+
+        public async Task DeleteComment(CommentDto commentDto)
+        {
+            try
+            {
+                var token = await _localStorageService.GetItemAsStringAsync(Constant.Token);
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+                var commentDtoJson = JsonConvert.SerializeObject(commentDto);
+                var commentDtoContent = new StringContent(commentDtoJson, Encoding.UTF8, "application/json");
+                await _httpClient.PostAsync("comments/delete", commentDtoContent);
+            }
+
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
     }
 }
