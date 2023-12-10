@@ -238,7 +238,7 @@ else
 
         var commentId = await CommentService.CreateComment(comment);
 
-        await NotifyClients(commentId, userName);
+        await NotifyClients(commentId, userName, "create");
 
         //await LoadCommentsData();
 
@@ -251,12 +251,21 @@ else
         return authState;
     }
 
-    private async Task NotifyClients(int commentId, string userName)
+    private async Task NotifyClients(int commentId, string userName, string action)
     {
+        var message = "";
 
         if (hubConnection is not null && hubConnection.State == HubConnectionState.Connected)
         {
-            var message = $"Comment with Id={commentId} created by User : {userName}";
+            if (action == "create")
+            {
+                message = $"Comment with Id={commentId} created by User : {userName}";
+            }
+            else if (action == "delete")
+            {
+                message = $"Comment with Id={commentId} deleted by User : {userName}";
+            }
+            
             await hubConnection.SendAsync("SendMessage", message);
         }
     }
@@ -278,6 +287,9 @@ else
     {
         var result = await GetConfirmationDialog();
 
+        var state = await GetAuthState();
+        var userName = state.User.Identities.First().Claims.ElementAt(2).Value;
+
         if (result.Equals(true))
         {
             this.commentModel = commentModel;
@@ -294,10 +306,13 @@ else
             };
             await CommentService.DeleteComment(comment);
 
-            await LoadCommentsData();
+            await NotifyClients((int)comment.CommentID, userName, "delete");
         }
 
-        StateHasChanged();
+        else
+        {
+            StateHasChanged();
+        }
     }
 
     private async Task<bool?> GetConfirmationDialog()
