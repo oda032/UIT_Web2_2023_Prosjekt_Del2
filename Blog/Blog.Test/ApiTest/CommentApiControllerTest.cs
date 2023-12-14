@@ -181,5 +181,38 @@ namespace Blog.Test.ApiTest
             Assert.IsNotNull(result);
             Assert.AreEqual(400, result.StatusCode);
         }
+
+        [TestMethod]
+        public async Task PostReturnOkWhenCommentIsDeleted()
+        {
+            // Arrange
+            var controller = new CommentController(mockCommentRepository.Object, mapper);
+            controller.ControllerContext.HttpContext = new DefaultHttpContext();
+
+            // Act
+            var result = await controller.DeleteComment(fakeCommentDto) as OkResult;
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.AreEqual(200, result.StatusCode);
+            Assert.IsInstanceOfType(result, typeof(OkResult));
+        }
+
+        [TestMethod]
+        public async Task PostReturnBadRequestWhenCommentIsDeleted()
+        {
+            // Arrange
+            var controller = new CommentController(mockCommentRepository.Object, mapper);
+            controller.ControllerContext.HttpContext = new DefaultHttpContext();
+            controller.ModelState.AddModelError("Error", "Invalid...");
+
+            // Act
+            var result = await controller.DeleteComment(fakeCommentDto) as BadRequestObjectResult;
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.AreEqual(400, result.StatusCode);
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+        }
     }
 }

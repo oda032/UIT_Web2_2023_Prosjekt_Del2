@@ -42,7 +42,7 @@ namespace Blog.Server.Service
 
             catch (Exception ex)
             {
-                Console.WriteLine($"Exception: {ex.Message}");
+                throw new Exception(ex.Message);
             }
         }
     }

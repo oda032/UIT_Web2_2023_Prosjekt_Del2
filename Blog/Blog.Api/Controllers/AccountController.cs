@@ -16,13 +16,11 @@ namespace Blog.Api.Controllers
     [ApiController]
     public class AccountController : ControllerBase
     {
-        private readonly ApplicationDbContext _db;
         private readonly UserManager<IdentityUser> _userManager;
         private readonly IAccountRepository _accountRepository;
 
-        public AccountController(ApplicationDbContext db, UserManager<IdentityUser> userManager, IAccountRepository accountRepository)
+        public AccountController(UserManager<IdentityUser> userManager, IAccountRepository accountRepository)
         {
-            _db = db;
             _userManager = userManager;
             _accountRepository = accountRepository;
         }
