@@ -32,6 +32,8 @@ Kort beskrivelse av hva som er gjort:
 
 2. Tag v1.0.4.
 
+## Dato: 2023-12-14 - Etablerer en release branch som skal holde siste oppdateringer.
+
 
 
 
