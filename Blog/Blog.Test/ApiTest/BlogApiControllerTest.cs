@@ -3,6 +3,7 @@ using Blog.Api.Controllers;
 using Blog.Common.Enum;
 using Blog.Common.Interface.IRepository;
 using Blog.Common.Model.Dto;
+using Blog.Common.Model.Entity;
 using Blog.DataAccess.Repository;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -27,6 +28,10 @@ namespace Blog.Test.ApiTest
         private Common.Model.Entity.Blog fakeBlog2;
         private List<Common.Model.Entity.Blog> fakeBlogs;
         private IdentityUser fakeIdentityUser;
+        private Post fakePost1;
+        private List<Post> fakePosts;
+        private Comment fakeComment1;
+        private List<Comment> fakeComments;
 
 
         [TestInitialize]
@@ -43,6 +48,36 @@ namespace Blog.Test.ApiTest
                 EmailConfirmed = true,
             };
 
+            fakeComment1 = new Comment
+            {
+                CommentDetails = "details",
+                CommentID = 1,
+                CommentOwner = fakeIdentityUser,
+                CommentOwnerID = fakeIdentityUser.Id,
+                CommentTitle = "title",
+                ObjectOwnerId = fakeIdentityUser.Id,
+                PostID = 1,
+                BlogID = 1,
+                Post = fakePost1
+            };
+
+            fakeComments = new List<Comment> { fakeComment1 };
+
+            fakePost1 = new Post
+            {
+                PostDetails = "details",
+                BlogID = 1,
+                PostOwner = fakeIdentityUser,
+                PostOwnerID = fakeIdentityUser.Id,
+                PostTitle = "title",
+                ObjectOwnerId = fakeIdentityUser.Id,
+                PostID = 1,
+                Blog = fakeBlog1,
+                Comments = fakeComments
+            };
+
+            fakePosts = new List<Post> { fakePost1 };
+
             fakeBlog1 = new Common.Model.Entity.Blog
             {
                 BlogDetails = "details",
@@ -51,7 +86,8 @@ namespace Blog.Test.ApiTest
                 BlogOwnerID = fakeIdentityUser.Id,
                 BlogStatus = BlogStatus.Open,
                 BlogTitle = "title",
-                ObjectOwnerId = fakeIdentityUser.Id
+                ObjectOwnerId = fakeIdentityUser.Id,
+                Posts = fakePosts
             };
 
             fakeBlog2 = new Common.Model.Entity.Blog
@@ -62,8 +98,11 @@ namespace Blog.Test.ApiTest
                 BlogOwnerID = fakeIdentityUser.Id,
                 BlogStatus = BlogStatus.Open,
                 BlogTitle = "title",
-                ObjectOwnerId = fakeIdentityUser.Id
+                ObjectOwnerId = fakeIdentityUser.Id,
+                Posts = fakePosts
             };
+
+
 
             fakeBlogs = new List<Common.Model.Entity.Blog> { fakeBlog1, fakeBlog2};
 

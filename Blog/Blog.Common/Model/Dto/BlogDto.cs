@@ -16,5 +16,7 @@ namespace Blog.Common.Model.Dto
         public BlogStatus BlogStatus { get; set; }
         public string? ObjectOwnerId { get; set; }
         public string? BlogOwnerName { get; set; }
+        public int? PostsCount { get; set; }
+        public int? CommentsCount { get; set; }
     }
 }

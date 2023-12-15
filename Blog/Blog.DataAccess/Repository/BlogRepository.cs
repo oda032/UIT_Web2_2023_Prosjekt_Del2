@@ -47,6 +47,7 @@ namespace Blog.DataAccess.Repository
         {
             var result = await db.Blogs
                 .Include(bl => bl.Posts)
+                .ThenInclude(po=>po.Comments)
                 .Include(bl => bl.BlogOwner)
                 .Include(bl => bl.UserSubscribedBlogs)
                 .ToListAsync();
