@@ -33,6 +33,16 @@ Kort beskrivelse av hva som er gjort:
 2. Tag v1.0.4.
 
 ## Dato: 2023-12-14 - Etablerer en release branch som skal holde siste oppdateringer.
+1. Denne branchen skal være utgangspunktet for nye feature branches.  
+Når feature er fullført, skal denne commites og et nytt pull request kjøres - her skal feature branch blir merged til denne release branch.  
+
+## Dato: 2023-12-15 - Det vises antall innlegg og kommentarer i hvert abonnert blogg
+1. Branch "feature/Extended_functionality_of_subscribed_blogs".  
+Det er gjort oppdateringer i blog repository og blog controller. Blog inneholder nå alle inngående innlegg med alle inngående kommentarer.  
+Betydelige endringer i design/struktur av blogItem komponent. 
+Nytt header komponent for abonnert blogger.  
+En test blir reparert pga endringer i api kontroller metoden.
+2.  Tag v1.0.5.
 
 
 

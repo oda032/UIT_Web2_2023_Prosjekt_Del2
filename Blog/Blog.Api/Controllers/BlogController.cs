@@ -25,8 +25,25 @@ namespace Blog.Api.Controllers
         [HttpGet("all")]
         public async Task<IActionResult> GetAllBlogs()
         {
+            var listOfValues = new List<(int, int)>();
             var blogs = await _blogRepository.GetBlogs();
+            foreach (var blog in blogs)
+            {
+                var commentsSum = 0;
+                var postsCount = blog.Posts.Count;
+                foreach (var post in blog.Posts)
+                {
+                    commentsSum += post.Comments.Count;
+                }
+                listOfValues.Add((postsCount, commentsSum));
+            }
+            
             var blogDtos = _mapper.Map<IEnumerable<BlogDto>>(blogs);
+            for(int i = 0; i < blogDtos.Count(); i++)
+            {
+                blogDtos.ElementAt(i).PostsCount = listOfValues[i].Item1;
+                blogDtos.ElementAt(i).CommentsCount = listOfValues[i].Item2;
+            }
             return Ok(blogDtos);
         }
 

@@ -6,24 +6,35 @@
         <table class="table table-bordered">
             <tbody class="table-body">
                 <tr>
-                    <td width="5%">@BlogDto.BlogID</td>
-                    <td width="10%">@BlogDto.BlogTitle</td>
-                    <td width="10%">@BlogDto.BlogDetails</td>
-                    <td width="40%">@BlogDto.BlogOwnerID</td>
-                    <td width="10%">@BlogDto.BlogStatus</td>
-                    <td>
-                        @if (IsSubscribed(BlogDto.BlogID))
-                        {
-                            <MudButton Variant="Variant.Text" Style="@($"color:{Colors.BlueGrey.Darken2};font-size:1.25rem")" Disabled="true">Subscribed</MudButton>
-                        }
-                        else
-                        {
+                    <td class="text-centered" width="3%">@BlogDto.BlogID</td>
+                    <td class="text-centered" width="6%">@BlogDto.BlogTitle</td>
+                    <td class="text-centered" width="6%">@BlogDto.BlogDetails</td>
+                    <td class="text-centered" width="27%">@BlogDto.BlogOwnerID</td>
+                    <td class="text-centered" width="6%">@BlogDto.BlogStatus</td>
+
+                    @if (IsSubscribed(BlogDto.BlogID))
+                    {
+                        <td class="text-centered" width="12%">
+                            @BlogDto.PostsCount
+                        </td>
+                        <td class="text-centered" width="12%">
+                            @BlogDto.CommentsCount
+                        </td>
+                        <td width="10%">
+                            <MudButton Variant="Variant.Text" Style="@($"color:{Colors.BlueGrey.Darken2}; font-size:1.2rem")" Disabled="true">Subscribed</MudButton>
+                        </td>
+                    }
+                    else
+                    {
+                        <td width="37%">
                             <AuthorizeView>
                                 <Authorized>
-                                    <MudButton Variant="Variant.Filled" Style="@($"color:{Colors.Grey.Lighten5}, background-color:{Colors.BlueGrey.Darken2}")" @onclick=SubscribeBlog>Subscribe</MudButton>
+                                    <MudButton Variant="Variant.Filled" Style="@($"color:{Colors.Grey.Lighten5}; background-color:{Colors.BlueGrey.Darken2}; font-size:1.1rem; width:90%")" @onclick=SubscribeBlog>Subscribe</MudButton>
                                 </Authorized>
                             </AuthorizeView>
-                        }
+                        </td>
+                    }
+                    <td class="text-centered">
                         <MudButton Variant="Variant.Filled" Color="Color.Default" href="@($"/posts/{BlogDto.BlogID}")">Go to posts</MudButton>
                     </td>
                 </tr>

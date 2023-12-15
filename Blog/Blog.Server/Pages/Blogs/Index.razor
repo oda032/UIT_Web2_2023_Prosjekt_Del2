@@ -23,7 +23,7 @@
                 <AuthorizeView>
                     <Authorized>
                         <MudText Typo="Typo.h5" Align="Align.Start" Style="@($"color:{Colors.Cyan.Darken4};font-size:1.5rem;text-transform: uppercase;")">Subscribed blogs</MudText>
-                        <BlogHeader/>
+                        <BlogHeaderSubscribed/>
                         @foreach (var subsribedBlogDto in subscribedBlogDtos)
                         {
                             <BlogItem BlogDto="subsribedBlogDto" SubscribedBlogs="subscribedBlogDtos"/>
@@ -78,6 +78,7 @@
                 foreach (var usbDto in usbDtos)
                 {
                     var blogDto = allBlogs.SingleOrDefault(b => b.BlogID == usbDto.BlogID);
+
                     subscribedBlogs.Add(blogDto);
                     subscribedBlogDtos = subscribedBlogs;
                     StateHasChanged();
