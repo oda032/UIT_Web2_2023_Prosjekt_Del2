@@ -44,6 +44,13 @@ Nytt header komponent for abonnert blogger.
 En test blir reparert pga endringer i api kontroller metoden.
 2.  Tag v1.0.5.
 
+## Dato: 2023-12-16 - Blogger kan "unsubscribes" når bruker ikke vil ha bloggen som subscribed.
+1. Branch "feature/Unsubscribe_blogs".  
+Det er lagt til en knapp for subscribed blogs som trigger "unsubscribe" prosessen.  
+En UserUnsubscribedBlog entity blir fjernet i DB. Dette fører til at bloggen flytter seg til en liste med unsubscribed blogger.
+Det er også lagt til et par tester som dekker nytt funksjonalitet.
+2. Tag v1.0.6.
+
 
 
 

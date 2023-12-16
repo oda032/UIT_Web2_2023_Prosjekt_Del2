@@ -13,5 +13,7 @@ namespace Blog.Common.Interface.IService
         Task<IEnumerable<UserSubscribedBlogDto>> GetUserSubscribedBlogs(string userId);
 
         Task<int> CreateUserSubscribedBlog(UserSubscribedBlogDto userSubscribedBlogDto);
+
+        Task DeleteUserSubscribedBlog(UserSubscribedBlogDto userSubscribedBlogDto);
     }
 }

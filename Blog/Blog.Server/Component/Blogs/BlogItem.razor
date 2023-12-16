@@ -21,7 +21,7 @@
                             @BlogDto.CommentsCount
                         </td>
                         <td width="10%">
-                            <MudButton Variant="Variant.Text" Style="@($"color:{Colors.BlueGrey.Darken2}; font-size:1.2rem")" Disabled="true">Subscribed</MudButton>
+                            <MudButton Variant="Variant.Filled" Style="@($"color:{Colors.Grey.Lighten5}; background-color:{Colors.BlueGrey.Darken2}")" @onclick=UnsubscribeBlog>Unsubscribe</MudButton>
                         </td>
                     }
                     else
@@ -29,7 +29,7 @@
                         <td width="37%">
                             <AuthorizeView>
                                 <Authorized>
-                                    <MudButton Variant="Variant.Filled" Style="@($"color:{Colors.Grey.Lighten5}; background-color:{Colors.BlueGrey.Darken2}; font-size:1.1rem; width:90%")" @onclick=SubscribeBlog>Subscribe</MudButton>
+                                    <MudButton Variant="Variant.Filled" Style="@($"color:{Colors.Grey.Lighten5}; background-color:{Colors.Teal.Darken2}; font-size:1.1rem; width:90%")" @onclick=SubscribeBlog>Subscribe</MudButton>
                                 </Authorized>
                             </AuthorizeView>
                         </td>
@@ -53,9 +53,17 @@
     [Parameter]
     public EventCallback<BlogDto> OnSubscribeCalled { get; set; }
 
+    [Parameter]
+    public EventCallback<BlogDto> OnUnsubscribeCalled { get; set; }
+
     private async Task SubscribeBlog()
     {
         await OnSubscribeCalled.InvokeAsync(BlogDto);
+    }
+
+    private async Task UnsubscribeBlog()
+    {
+        await OnUnsubscribeCalled.InvokeAsync(BlogDto);
     }
 
     private bool IsSubscribed(int blogId)
