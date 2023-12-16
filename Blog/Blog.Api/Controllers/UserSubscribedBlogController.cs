@@ -45,5 +45,20 @@ namespace Blog.Api.Controllers
 
             return Ok(usbId);
         }
+
+        [HttpPost("delete")]
+        public async Task<IActionResult> DeleteUserSubscribedBlog(UserSubscribedBlogDto userSubscribedBlogDto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var usb = _mapper.Map<UserSubscribedBlog>(userSubscribedBlogDto);
+
+            await _userSubscribedBlogRepository.Delete(usb);
+
+            return Ok();
+        }
     }
 }

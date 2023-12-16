@@ -57,5 +57,23 @@ namespace Blog.Server.Service
                 return 0;
             }
         }
+
+        public async Task DeleteUserSubscribedBlog(UserSubscribedBlogDto userSubscribedBlogDto)
+        {
+            try
+            {
+                var token = await _localStorageService.GetItemAsStringAsync(Constant.Token);
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+                var usbDtoJson = JsonConvert.SerializeObject(userSubscribedBlogDto);
+                var usbDtoContent = new StringContent(usbDtoJson, Encoding.UTF8, "application/json");
+                await _httpClient.PostAsync("usersubscribedblogs/delete", usbDtoContent);
+            }
+
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
     }
 }

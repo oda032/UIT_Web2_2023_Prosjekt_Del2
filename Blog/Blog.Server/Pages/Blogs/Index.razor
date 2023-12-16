@@ -26,7 +26,7 @@
                         <BlogHeaderSubscribed/>
                         @foreach (var subsribedBlogDto in subscribedBlogDtos)
                         {
-                            <BlogItem BlogDto="subsribedBlogDto" SubscribedBlogs="subscribedBlogDtos"/>
+                            <BlogItem BlogDto="subsribedBlogDto" SubscribedBlogs="subscribedBlogDtos" OnUnsubscribeCalled="HandleUnsubscribe"/>
                         }
                     </Authorized>
                 </AuthorizeView>
@@ -110,6 +110,20 @@
                 ApplicationUserID = userId,
                 BlogID = changedBlogDto.BlogID
             });
+    }
+
+    public async Task HandleUnsubscribe(BlogDto unsubscribedBlog)
+    {
+        var state = await GetAuthState();
+        var userId = state.User.Identities.First().Claims.ElementAt(1).Value;
+
+        blogDtos = blogDtos.Append(unsubscribedBlog).ToList();
+        subscribedBlogDtos = subscribedBlogDtos.Where(b => b.BlogID != unsubscribedBlog.BlogID).ToList();
+        StateHasChanged();
+
+        var userSubscribedBlogs = await UserSubscribedBlogService.GetUserSubscribedBlogs(userId);
+        var usbToDelete = userSubscribedBlogs.Single(usb => usb.BlogID == unsubscribedBlog.BlogID && usb.ApplicationUserID == userId);
+        await UserSubscribedBlogService.DeleteUserSubscribedBlog(usbToDelete);
     }
 
     private async Task<AuthenticationState> GetAuthState()

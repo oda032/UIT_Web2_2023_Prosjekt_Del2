@@ -175,7 +175,7 @@ namespace Blog.Test.ServiceTest
         }
 
         [TestMethod]
-        public async Task CreateCommentGetZeroWhenException()
+        public async Task CreateUserSubscribeBlogGetZeroWhenException()
         {
             // Arrange
             mockHttpMessageHandler.Protected().Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
@@ -190,6 +190,41 @@ namespace Blog.Test.ServiceTest
             // Assert
             Assert.IsNotNull(result);
             Assert.AreEqual(0, result);
+        }
+
+        [TestMethod]
+        public async Task DeleteUserSubscribedBlogCanDeleteThisItem()
+        {
+            // Arrange
+            mockHttpMessageHandler.Protected().Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync(new HttpResponseMessage
+                {
+                    StatusCode = HttpStatusCode.OK
+                });
+
+            // Action
+            await userSubscribedBlogService.DeleteUserSubscribedBlog(fakeUserSubscribedBlogDto1);
+
+            // Assert
+            mockHttpMessageHandler.Protected().Verify(
+                "SendAsync",
+                Times.Once(),
+                ItExpr.Is<HttpRequestMessage>(request =>
+                    request.Method == HttpMethod.Post &&
+                    request.RequestUri == new Uri("https://example.com/usersubscribedblogs/delete")),
+                ItExpr.IsAny<CancellationToken>());
+        }
+
+        [TestMethod]
+        public async Task DeleteUserSubscribedBlogThrowExceptionWhenException()
+        {
+            // Arrange
+            mockHttpMessageHandler.Protected().Setup<Task<HttpResponseMessage>>("SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
+                .ThrowsAsync(new HttpRequestException("Error..."));
+
+            // Action
+            await Assert.ThrowsExceptionAsync<Exception>(async () => await userSubscribedBlogService.DeleteUserSubscribedBlog(fakeUserSubscribedBlogDto1));
         }
 
     }
