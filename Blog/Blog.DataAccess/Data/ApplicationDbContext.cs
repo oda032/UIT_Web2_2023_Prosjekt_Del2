@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
+// IMAGES DOWNLOADED FROM https://www.freepik.com/
+
 namespace Blog.DataAccess.Data
 {
     public class ApplicationDbContext : IdentityDbContext<IdentityUser>
@@ -26,6 +28,8 @@ namespace Blog.DataAccess.Data
 
         public DbSet<PostTag> PostTags { get; set; }
 
+        public DbSet<Image> Images { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -36,6 +40,7 @@ namespace Blog.DataAccess.Data
             modelBuilder.Entity<Tag>().ToTable("Tags");
             modelBuilder.Entity<PostTag>().ToTable("PostTags");
             modelBuilder.Entity<UserSubscribedBlog>().ToTable("UserSubscribedBlogs");
+            modelBuilder.Entity<Image>().ToTable("Images");
 
             var hasher = new PasswordHasher<IdentityUser>();
 

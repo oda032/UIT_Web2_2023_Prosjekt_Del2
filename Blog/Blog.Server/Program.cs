@@ -44,6 +44,10 @@ builder.Services.AddHttpClient<IUserSubscribedBlogService, UserSubscribedBlogSer
     .SetHandlerLifetime(TimeSpan.FromHours(2));
 builder.Services.AddHttpClient<ICommentService, CommentService>(client => client.BaseAddress = new Uri(baseAddress))
     .SetHandlerLifetime(TimeSpan.FromHours(2));
+builder.Services.AddHttpClient<IImageService, ImageService>(client => client.BaseAddress = new Uri(baseAddress))
+    .SetHandlerLifetime(TimeSpan.FromHours(2));
+builder.Services.AddHttpClient<IImageDownloadService, ImageDownloadService>(client => client.BaseAddress = new Uri(baseAddress))
+    .SetHandlerLifetime(TimeSpan.FromHours(2));
 builder.Services.AddHttpClient<IAccountService, AccountService>(client => client.BaseAddress = new Uri(baseAddress))
     .SetHandlerLifetime(TimeSpan.FromHours(2));
 
