@@ -50,6 +50,17 @@
     color: white;
 }
 
+.item-center{
+    display:flex;
+    align-items:center
+}
+
+.person-font-bold{
+    font-size:16x;
+    font-weight:500;
+    color:azure
+}
+
 @media (min-width: 641px) {
     .navbar-toggler {
         display: none;

@@ -48,12 +48,12 @@ namespace Blog.DataAccess.Repository
 
         public async Task<IEnumerable<Comment>> GetComments(int postId)
         {
-            var posts = await db.Comments
+            var comments = await db.Comments
                 .Include(co => co.CommentOwner)
                 .Include(co => co.Post)
                 .Where(co => co.PostID.Equals(postId))
                 .ToListAsync();
-            return posts;
+            return comments;
         }
 
         public async Task<Comment> GetOneComment(int? id)

@@ -50,6 +50,7 @@ builder.Services.AddTransient<ITagRepository, TagRepository>();
 builder.Services.AddTransient<IPostTagRepository, PostTagRepository>();
 builder.Services.AddTransient<IUserSubscribedBlogRepository, UserSubscribedBlogRepository>();
 builder.Services.AddTransient<ICommentRepository, CommentRepository>();
+builder.Services.AddTransient<IImageRepository, ImageRepository>();
 builder.Services.AddTransient<IAccountRepository, AccountRepository>();
 
 var app = builder.Build();

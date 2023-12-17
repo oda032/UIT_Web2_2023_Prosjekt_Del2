@@ -51,7 +51,13 @@ En UserUnsubscribedBlog entity blir fjernet i DB. Dette fører til at bloggen fly
 Det er også lagt til et par tester som dekker nytt funksjonalitet.
 2. Tag v1.0.6.
 
-
+## Dato: 2023-12-17 - Helt ny funksjonalitet for å jobbe med bilder
+1. Branch "feature/fileshare".  
+Helt ny funksjonalitet. Brukere skal ha mulighet til å se over alle tilgjengelige bilder i fileshare.  
+Hver innlogget bruker kan nå legge til et nytt bilde i fileshare.
+Man benytter en Url til et bilde på nettet for å laste denne ned, og legge den til DB som en byte[].
+Alle bildene hentes fra DB ved oppstart av fileshare.
+2. Tag v1.1.0.
 
 
 

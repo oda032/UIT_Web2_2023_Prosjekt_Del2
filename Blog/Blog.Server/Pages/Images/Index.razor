@@ -1,0 +1,103 @@
+﻿@page "/fileshare"
+@using Blog.Common.Interface.IService
+@using Blog.Common.Model.ViewModel
+@using Blog.Common.Model.Dto
+@using Blog.Server.Component.Images
+@inherits LayoutComponentBase
+@inject IImageService ImageService
+@inject IImageDownloadService ImageDownloadService
+
+<PageTitle>FileShare</PageTitle>
+
+
+<MudContainer Fixed="true">
+    <div class="w-100">
+        <MudGrid Spacing="2" Justify="Justify.Center">
+            @foreach (var image in imageModels)
+            {
+                @if (isLoading)
+                {
+                    <div class="text-center">
+                        <h4>Loading...</h4>
+                        <img src="images/loading.gif" />
+                    </div>
+                }
+                else
+                {
+                    <MudItem >
+                        <MudTooltip Text="@image.Name">
+                            <MudImage Src=@($"data:image/{image?.Format?.ToLower()};base64,{Convert.ToBase64String(image.Data)}") Alt="@image.Name" Style="width: 200px; height: 200px;" />
+                        </MudTooltip>
+                    </MudItem>
+                }
+            }
+        </MudGrid>
+    </div>
+    <div>
+        <ImageForm OnImageCreated="HandleImageCreated" />
+    </div>
+</MudContainer>
+
+
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthStateTask { get; set; }
+
+    private List<ImageModel>? imageModels = new List<ImageModel>();
+    private bool isLoading = true;
+
+    private ImageCreateModel newImage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        imageModels = await LoadImages();
+        StateHasChanged();
+        isLoading = false;
+    }
+
+    private async Task<List<ImageModel>> LoadImages()
+    {
+        if (imageModels.Count != 0)
+        {
+            imageModels = new List<ImageModel>();
+        }
+        var images = await ImageService.GetImages();
+
+        foreach (var img in images)
+        {
+            var imageModel = new ImageModel
+                {
+                    ImageID = img.ImageID,
+                    Name = img.Name,
+                    Url = img.Url,
+                    Data = img.Data
+                };
+            imageModels.Add(imageModel);
+        };
+        return imageModels;
+    }
+
+    private async Task HandleImageCreated(ImageCreateModel newImage)
+    {
+        this.newImage = newImage;
+
+        var image = new ImageDto
+            {
+                Name = newImage.Name,
+                Url = newImage.Url
+            };
+
+        var imageData = await ImageDownloadService.GetImageData(image.Url);
+        image.Data = imageData.Item1;
+        image.Format = imageData.Item2;
+
+        var imageId = await ImageService.CreateImage(image);
+
+        //await NotifyClients(commentId, userName, "create");
+
+        await LoadImages();
+
+        StateHasChanged();
+    }
+}

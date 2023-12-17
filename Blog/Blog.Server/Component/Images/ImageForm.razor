@@ -1,0 +1,53 @@
+﻿@using Blog.Common.Model.ViewModel
+@using Microsoft.AspNetCore.Components
+
+<MudContainer Fixed="true">
+    <div>
+        <MudText Typo="Typo.h5" Align="Align.Left" Style="@($"color:{Colors.Cyan.Darken4};font-size:1.5rem; text-transform: uppercase;")">Create an image</MudText>
+        <EditForm Model="@Model" OnValidSubmit="CreateImage">
+            <DataAnnotationsValidator />
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="py-2">
+                        <InputText @bind-Value="Model.Name" placeholder="Name" class="form-control mb-2" />
+                        <ValidationMessage For="(() => Model.Name)"></ValidationMessage>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="py-2">
+                        <InputText @bind-Value="Model.Url" placeholder="Url" class="form-control mb-2" />
+                        <ValidationMessage For="(() => Model.Url)"></ValidationMessage>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="py-2">
+                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.AddCircle" Color="Color.Info">Create</MudButton>
+                    </div>
+                </div>
+            </div>
+        </EditForm>
+    </div>
+</MudContainer>
+
+@code {
+    [Parameter]
+    public EventCallback<ImageCreateModel> OnImageCreated { get; set; }
+
+    public ImageCreateModel Model { get; set; } = new();
+
+    private async Task CreateImage()
+    {
+        await OnImageCreated.InvokeAsync(Model);
+
+        await ResetForm();
+    }
+
+    private async Task ResetForm()
+    {
+        Model = new ImageCreateModel();
+    }
+
+}
