@@ -59,5 +59,9 @@ Man benytter en Url til et bilde på nettet for å laste denne ned, og legge den t
 Alle bildene hentes fra DB ved oppstart av fileshare.
 2. Tag v1.1.0.
 
-
+## Dato: 2023-12-18 - Tester som dekker bildefunksjonaliteten
+1. Branch "feature/tests_for_image_functionality".  
+Det er lagt en del metoder i service, controller og repository ifm nytt bildefunksjonalitet.
+I denne branchen skal dette dekkes.
+2. Tag v1.1.1.
 
